@@ -118,9 +118,9 @@ if (USE_TLS)
     option(USE_OPEN_SSL "Use OpenSSL" OFF)
     option(USE_SECURE_TRANSPORT "Use Secure Transport" OFF)
 
-    # default to mbedtls on windows if nothing is configured
-    if (WIN32 AND NOT USE_OPEN_SSL AND NOT USE_MBED_TLS)
-      option(USE_MBED_TLS "Use Mbed TLS" ON)
+    # default to OpenSSL on windows if nothing is configured
+    if (WIN32 AND NOT USE_MBED_TLS)
+      option(USE_OPEN_SSL "Use OpenSSL" ON)
     endif()
 
     # default to securetranport on windows if nothing is configured
@@ -164,6 +164,10 @@ endif()
 if (WIN32)
   target_link_libraries(ixwebsocket wsock32 ws2_32 shlwapi)
   add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+
+  if (USE_TLS)
+    target_link_libraries(ixwebsocket Crypt32)
+  endif()
 endif()
 
 if (UNIX)
@@ -189,18 +193,9 @@ if (USE_TLS AND USE_OPEN_SSL)
 endif()
 
 if (USE_TLS AND USE_MBED_TLS)
-  # FIXME I'm not too sure that this USE_VENDORED_THIRD_PARTY thing works
-  if (USE_VENDORED_THIRD_PARTY)
-    set (ENABLE_PROGRAMS OFF)
-    add_subdirectory(third_party/mbedtls)
-    include_directories(third_party/mbedtls/include)
-
-    target_link_libraries(ixwebsocket mbedtls)
-  else()
-    find_package(MbedTLS REQUIRED)
-    target_include_directories(ixwebsocket PUBLIC ${MBEDTLS_INCLUDE_DIRS})
-    target_link_libraries(ixwebsocket ${MBEDTLS_LIBRARIES})
-  endif()
+  find_package(MbedTLS REQUIRED)
+  target_include_directories(ixwebsocket PUBLIC ${MBEDTLS_INCLUDE_DIRS})
+  target_link_libraries(ixwebsocket ${MBEDTLS_LIBRARIES})
 endif()
 
 if (NOT ZLIB_FOUND)
